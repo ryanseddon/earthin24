@@ -32,6 +32,7 @@ func main() {
 
 func framePath(time time.Time) string {
 	url := "http://himawari8-dl.nict.go.jp/himawari8/img/D531106/1d/550"
+	// Himawari8 only has images saved in 10 minute intervals, modulo to the rescue
 	minute := time.Minute() - time.Minute()%10
 
 	return fmt.Sprintf("%s/%d/%02d/%02d/%02d%02d00_0_0.png", url, time.Year(), time.Month(), time.Day(), time.Hour(), minute)
@@ -43,6 +44,8 @@ func getImage(url string, name int, wg *sync.WaitGroup) {
 	if e != nil {
 		log.Fatal(e)
 	}
+
+	log.Printf("status: %s | frame: %s", response.StatusCode, url)
 
 	defer response.Body.Close()
 
