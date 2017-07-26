@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"log"
 	"net/http"
@@ -14,7 +16,7 @@ import (
 
 func main() {
 	var wg sync.WaitGroup
-	frames := make([]int, 24*6)
+	frames := make([]int, 6)
 	now := time.Now()
 	// Change the date to midday AEST in UTC time
 	t := time.Date(now.Year(), now.Month(), now.Day(), 2, 00, 00, 0, time.UTC)
@@ -23,7 +25,7 @@ func main() {
 
 	for i, _ := range frames {
 		wg.Add(1)
-		go getImage(framePath(first), i, &wg)
+		go getImage(framePath(first), i, &wg, first)
 		first = first.Add(time.Duration(10) * time.Minute)
 	}
 
@@ -38,7 +40,7 @@ func framePath(time time.Time) string {
 	return fmt.Sprintf("%s/%d/%02d/%02d/%02d%02d00_0_0.png", url, time.Year(), time.Month(), time.Day(), time.Hour(), minute)
 }
 
-func getImage(url string, name int, wg *sync.WaitGroup) {
+func getImage(url string, name int, wg *sync.WaitGroup, date time.Time) {
 	defer wg.Done()
 	response, e := http.Get(url)
 	if e != nil {
@@ -54,6 +56,23 @@ func getImage(url string, name int, wg *sync.WaitGroup) {
 		file, err := os.Create(fmt.Sprintf("%04d.png", name))
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if name == 0 {
+			img, err1 := png.Decode(response.Body)
+			if err1 != nil {
+				log.Fatal(err1)
+			}
+
+			out, err2 := os.Create(fmt.Sprintf("%d%02d%02d.jpg", date.Year(), date.Month(), date.Day()))
+			if err2 != nil {
+				log.Fatal(err2)
+			}
+
+			err3 := jpeg.Encode(out, img, &jpeg.Options{jpeg.DefaultQuality})
+			if err3 != nil {
+				log.Fatal(err3)
+			}
 		}
 
 		// Generating md5 hashes for frames
