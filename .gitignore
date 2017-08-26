@@ -1,0 +1,7 @@
+*.mp4
+*.png
+video
+tweet
+logs.txt
+node_modules
+.DS_Store
